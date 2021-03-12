@@ -1,67 +1,86 @@
 #include "Includes.h"
 
-Coord move(Coord pos, const Length window)
-{
-	const bool dirs[4] = {
-		keyState(SDL_SCANCODE_W) || keyState(SDL_SCANCODE_UP),
-		keyState(SDL_SCANCODE_D) || keyState(SDL_SCANCODE_RIGHT),
-		keyState(SDL_SCANCODE_S) || keyState(SDL_SCANCODE_DOWN),
-		keyState(SDL_SCANCODE_A) || keyState(SDL_SCANCODE_LEFT)
-	};
-	for(Direction i = DIR_U; i <= DIR_L; i++)
-		if(dirs[i] && !dirs[dirINV(i)])
-				pos = coordShift(pos,i,4);
-	return coordWrap(pos, (Range){0,window.x}, (Range){0,window.y});
-}
+#define MAX_COLUMNS 20
 
-void trackMouse(const Color color)
+int main(void)
 {
-	setColor(u32ToColor(~colorToU32(color)));
-	drawLineCoords(mouse.pos, coordOffset(mouse.pos, coordMul(mouse.vec, 3)));
-	setColor(WHITE);
-	fillCircleCoord(mouse.pos, 3);
-}
+	// Initialization
+	//--------------------------------------------------------------------------------------
+	const int screenWidth = 800;
+	const int screenHeight = 450;
 
-void showText(const Coord pos, const Color color, const Coord window, const char *text)
-{
-	setFontColor(color);
-	drawTextCenteredCoord(pos, text);
-	for(Direction i = DIR_U; i <= DIR_L; i++){
-		drawTextCenteredCoord(coordShift(pos, i, dirLR(i)?window.x:window.y), text);
+	InitWindow(screenWidth, screenHeight, "raylib [core] example - 3d camera first person");
+
+	// Define the camera to look into our 3d world (position, target, up vector)
+	Camera camera = { 0 };
+	camera.position = (Vector3){ 4.0f, 2.0f, 4.0f };
+	camera.target = (Vector3){ 0.0f, 1.8f, 0.0f };
+	camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
+	camera.fovy = 60.0f;
+	camera.type = CAMERA_PERSPECTIVE;
+
+	// Generates some random columns
+	float heights[MAX_COLUMNS] = { 0 };
+	Vector3 positions[MAX_COLUMNS] = { 0 };
+	Color colors[MAX_COLUMNS] = { 0 };
+
+	for (int i = 0; i < MAX_COLUMNS; i++)
+	{
+		heights[i] = (float)GetRandomValue(1, 12);
+		positions[i] = (Vector3){ (float)GetRandomValue(-15, 15), heights[i]/2.0f, (float)GetRandomValue(-15, 15) };
+		colors[i] = (Color){ GetRandomValue(20, 255), GetRandomValue(10, 55), 30, 255 };
 	}
 
-}
+	SetCameraMode(camera, CAMERA_FIRST_PERSON); // Set a first person camera mode
 
-int main(int argc, char const *argv[])
-{
-	const Length window = {800, 600};
-	init(window);
-	setFontSize(48);
-	const char* text = "DogeLib :3";
-	Coord pos = coordDiv(window, 2);
+	SetTargetFPS(60);	 // Set our game to run at 60 frames-per-second
+	//--------------------------------------------------------------------------------------
 
-	while(1){
-		Ticks frameStart = getTicks();
-		clear();
+	// Main game loop
+	while (!WindowShouldClose())	// Detect window close button or ESC key
+	{
+		// Update
+		//----------------------------------------------------------------------------------
+		UpdateCamera(&camera);	// Update camera
+		//----------------------------------------------------------------------------------
 
-		setColor(mouseBtnState(MOUSE_L)?MAGENTA:CYAN);
-		drawCircleCoord(mouse.pos, 10);
+		// Draw
+		//----------------------------------------------------------------------------------
+		BeginDrawing();
 
-		setColor(mouseBtnState(MOUSE_L)?CYAN:MAGENTA);
-		Coord vx[8] = {0};
-		for(uint i = 0; i < 4; i++){
-			vx[i*2] = coordShift(mouse.pos, i, 80);
-			vx[i*2+1] = coordShift(coordShift(mouse.pos, dirINV(i), 60), dirROR(dirINV(i)), 60);
+		ClearBackground(RAYWHITE);
+
+		BeginMode3D(camera);
+
+		DrawPlane((Vector3){ 0.0f, 0.0f, 0.0f }, (Vector2){ 32.0f, 32.0f }, LIGHTGRAY); // Draw ground
+		DrawCube((Vector3){ -16.0f, 2.5f, 0.0f }, 1.0f, 5.0f, 32.0f, BLUE);	 // Draw a blue wall
+		DrawCube((Vector3){ 16.0f, 2.5f, 0.0f }, 1.0f, 5.0f, 32.0f, LIME);	// Draw a green wall
+		DrawCube((Vector3){ 0.0f, 2.5f, 16.0f }, 32.0f, 5.0f, 1.0f, GOLD);	// Draw a yellow wall
+
+		// Draw some cubes around
+		for (int i = 0; i < MAX_COLUMNS; i++)
+		{
+			DrawCube(positions[i], 2.0f, heights[i], 2.0f, colors[i]);
+			DrawCubeWires(positions[i], 2.0f, heights[i], 2.0f, MAROON);
 		}
-		drawPoly(vx, 8);
 
-		const Color color = mouseBtnState(MOUSE_L)?BLUE:RED;
-		pos = move(pos, window);
-		trackMouse(color);
-		showText(pos, color, window, text);
+		EndMode3D();
 
-		draw();
-		events(frameStart + TPF);
+		DrawRectangle( 10, 10, 220, 70, Fade(SKYBLUE, 0.5f));
+		DrawRectangleLines( 10, 10, 220, 70, BLUE);
+
+		DrawText("First person camera default controls:", 20, 20, 10, BLACK);
+		DrawText("- Move with keys: W, A, S, D", 40, 40, 10, DARKGRAY);
+		DrawText("- Mouse move to look around", 40, 60, 10, DARKGRAY);
+
+		EndDrawing();
+		//----------------------------------------------------------------------------------
 	}
+
+	// De-Initialization
+	//--------------------------------------------------------------------------------------
+	CloseWindow();	// Close window and OpenGL context
+	//--------------------------------------------------------------------------------------
+
 	return 0;
 }
