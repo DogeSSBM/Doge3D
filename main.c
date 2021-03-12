@@ -2,8 +2,6 @@
 
 int main(void)
 {
-	// Initialization
-	//--------------------------------------------------------------------------------------
 	const int screenWidth = 800;
 	const int screenHeight = 450;
 
@@ -20,7 +18,7 @@ int main(void)
 	Vector3 cubePosition = { 0.0f, 0.0f, 0.0f };
 
 	SetCameraMode(camera, CAMERA_FREE); // Set a free camera mode
-
+	SetCameraMoveControls(KEY_W, KEY_S, KEY_D, KEY_A, KEY_SPACE, KEY_LEFT_SHIFT);
 	SetTargetFPS(60);	 // Set our game to run at 60 frames-per-second
 	//--------------------------------------------------------------------------------------
 
@@ -48,16 +46,6 @@ int main(void)
 		DrawGrid(10, 1.0f);
 
 		EndMode3D();
-
-		DrawRectangle( 10, 10, 320, 133, Fade(SKYBLUE, 0.5f));
-		DrawRectangleLines( 10, 10, 320, 133, BLUE);
-
-		DrawText("Free camera default controls:", 20, 20, 10, BLACK);
-		DrawText("- Mouse Wheel to Zoom in-out", 40, 40, 10, DARKGRAY);
-		DrawText("- Mouse Wheel Pressed to Pan", 40, 60, 10, DARKGRAY);
-		DrawText("- Alt + Mouse Wheel Pressed to Rotate", 40, 80, 10, DARKGRAY);
-		DrawText("- Alt + Ctrl + Mouse Wheel Pressed for Smooth Zoom", 40, 100, 10, DARKGRAY);
-		DrawText("- Z to zoom to (0, 0, 0)", 40, 120, 10, DARKGRAY);
 
 		EndDrawing();
 		//----------------------------------------------------------------------------------
